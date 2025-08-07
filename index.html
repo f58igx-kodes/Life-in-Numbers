@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life in Numbers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: var(--bg-color, #1e1e1e);
+            color: var(--text-color, #fff);
+            text-align: center;
+            padding: 2rem;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            flex: 1;
+        }
+
+        .card {
+            background: var(--card-bg, rgba(255, 255, 255, 0.1));
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        input,
+        button,
+        select {
+            padding: 0.5rem;
+            border-radius: 8px;
+            border: none;
+            margin: 0.5rem;
+            font-size: 1rem;
+            font-family: 'Fredoka', sans-serif;
+            background: var(--input-bg, #333);
+            color: var(--input-text, #fff);
+        }
+
+        button {
+            background: var(--button-bg, #4CAF50);
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: var(--button-hover, #45a049);
+        }
+
+        button:disabled {
+            background: var(--button-bg, #4CAF50);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-bar,
+        .xp-progress-bar,
+        .badge-progress-bar {
+            background: var(--progress-bg, #333);
+            border-radius: 20px;
+            overflow: hidden;
+            height: 20px;
+            margin: 0.5rem auto;
+            width: 100%;
+            position: relative;
+        }
+
+        .progress-fill,
+        .xp-progress-fill,
+        .badge-progress-fill {
+            height: 100%;
+            background: var(--progress-fill, linear-gradient(90deg, #00ff99, #0099ff));
+            text-align: right;
+            padding-right: 10px;
+            box-sizing: border-box;
+            line-height: 20px;
+            transition: width 1s ease-in-out;
+        }
+
+        .quote {
+            font-style: italic;
+            color: var(--quote-color, #aaa);
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            background: var(--tooltip-bg, #333);
+            color: var(--tooltip-text, #fff);
+            padding: 5px 10px;
+            border-radius: 5px;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+
+        .welcome-screen {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--tooltip-bg, rgba(0, 0, 0, 0.9));
+            color: var(--tooltip-text, #fff);
+            padding: 1.5rem;
+            border-radius: 12px;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            text-align: left;
+            font-size: 1rem;
+            animation: welcomeFadeIn 0.5s ease-in-out;
+        }
+
+        .welcome-screen h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+
+        .welcome-screen ul {
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .welcome-screen .arrow {
+            position: absolute;
+            top: -20px;
+            right: 20px;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-bottom-color: var(--tooltip-bg, #333);
+        }
+
+        .welcome-screen button {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        @keyframes welcomeFadeIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-color, #fff);
+        }
+
+        .footer a {
+            color: var(--button-bg, #4CAF50);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer a:hover {
+            color: var(--button-hover, #45a049);
+        }
+
+        .animated-number {
+            display: inline-block;
+        }
+
+        .dashboard {
+            grid-column: span 2;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--confetti-color, #ff0);
+            animation: fall 2s linear;
+            z-index: 999;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .milestone-item,
+        .todo-item,
+        .history-item,
+        .badge-item,
+        .achievement-item,
+        .focus-history-item {
+            animation: slideIn 0.5s ease-in;
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .pulse {
+            animation: pulse 1s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        .shop-item,
+        .todo-item,
+        .badge-item,
+        .achievement-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0.5rem 0;
+        }
+
+        .shop-item button,
+        .todo-item button,
+        .badge-item button,
+        .achievement-item button {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .timer-display {
+            font-size: 1.5rem;
+            margin: 0.5rem 0;
+            font-weight: bold;
+        }
+
+        body.dark::before {
+            background: linear-gradient(var(--gradient-angle, 45deg), #1e1e1e, #2c3e50, #4a235a);
+            animation: wave 15s infinite ease-in-out;
+        }
+
+        body.light::before {
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.5), rgba(200, 200, 200, 0.2));
+            animation: pulse 10s infinite ease-in-out;
+        }
+
+        body.matrix::before {
+            background: #000;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="15" font-size="16" fill="#0f0">101010</text></svg>');
+            background-size: 20px;
+            animation: digital-rain 5s linear infinite;
+        }
+
+        body.sunset::before {
+            background: linear-gradient(to bottom, #ff4500, #ffd700);
+            animation: horizon-glow 12s infinite ease-in-out;
+        }
+
+        body.emoji::before {
+            background: #e0ffff;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="15" font-size="20" fill="#ff69b4">❤️⭐</text></svg>');
+            background-size: 30px;
+            animation: emoji-float 20s linear infinite;
+        }
+
+        body.neon::before {
+            background: linear-gradient(var(--gradient-angle, 45deg), #ff00ff, #00ffff);
+            animation: neon-glow 10s infinite ease-in-out;
+        }
+
+        body.firestorm::before {
+            background: linear-gradient(var(--gradient-angle, 45deg), #000, #8b0000);
+            animation: firestorm-pulse 8s infinite ease-in-out;
+        }
+
+        @keyframes wave {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes digital-rain {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 0 100vh;
+            }
+        }
+
+        @keyframes horizon-glow {
+            0% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 0.9;
+            }
+
+            100% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes emoji-float {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 0 -100vh;
+            }
+        }
+
+        @keyframes neon-glow {
+            0% {
+                opacity: 0.8;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes firestorm-pulse {
+            0% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.7;
+            }
+        }
+
+        body.light {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --input-bg: #ddd;
+            --input-text: #333;
+            --progress-bg: #ccc;
+            --quote-color: #666;
+            --button-bg: #4CAF50;
+            --button-hover: #45a049;
+            --tooltip-bg: #333;
+            --tooltip-text: #fff;
+        }
+
+        body.matrix {
+            --bg-color: #000;
+            --text-color: #0f0;
+            --card-bg: rgba(0, 255, 0, 0.1);
+            --input-bg: #111;
+            --input-text: #0f0;
+            --progress-bg: #111;
+            --progress-fill: linear-gradient(90deg, #0f0, #00ff99);
+            --quote-color: #0a0;
+            --button-bg: #0f0;
+            --button-hover: #00cc00;
+            --tooltip-bg: #111;
+            --tooltip-text: #0f0;
+        }
+
+        body.sunset {
+            --bg-color: #ff4500;
+            --text-color: #fff;
+            --card-bg: rgba(255, 69, 0, 0.2);
+            --input-bg: #ff6347;
+            --input-text: #fff;
+            --progress-bg: #8b0000;
+            --progress-fill: linear-gradient(90deg, #ff4500, #ffd700);
+            --quote-color: #ffdead;
+            --button-bg: #ff6347;
+            --button-hover: #ff4500;
+            --tooltip-bg: #8b0000;
+            --tooltip-text: #fff;
+        }
+
+        body.emoji {
+            --bg-color: #e0ffff;
+            --text-color: #333;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --input-bg: #add8e6;
+            --input-text: #333;
+            --progress-bg: #87ceeb;
+            --quote-color: #4682b4;
+            --button-bg: #ff69b4;
+            --button-hover: #ff1493;
+            --tooltip-bg: #4682b4;
+            --tooltip-text: #fff;
+        }
+
+        body.neon {
+            --bg-color: #ff00ff;
+            --text-color: #fff;
+            --card-bg: rgba(0, 255, 255, 0.2);
+            --input-bg: #00ffff;
+            --input-text: #fff;
+            --progress-bg: #333;
+            --progress-fill: linear-gradient(90deg, #ff00ff, #00ffff);
+            --quote-color: #00ffff;
+            --button-bg: #ff00ff;
+            --button-hover: #cc00cc;
+            --tooltip-bg: #333;
+            --tooltip-text: #fff;
+        }
+
+        body.firestorm {
+            --bg-color: #000;
+            --text-color: #fff;
+            --card-bg: rgba(139, 0, 0, 0.2);
+            --input-bg: #8b0000;
+            --input-text: #fff;
+            --progress-bg: #333;
+            --progress-fill: linear-gradient(90deg, #8b0000, #ff0000);
+            --quote-color: #ff4040;
+            --button-bg: #ff0000;
+            --button-hover: #cc0000;
+            --tooltip-bg: #333;
+            --tooltip-text: #fff;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard {
+                grid-column: span 1;
+            }
+
+            input,
+            button,
+            select {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .theme-toggle {
+                top: 1rem;
+                right: 1rem;
+            }
+
+            .welcome-screen {
+                max-width: 90%;
+                font-size: 0.9rem;
+            }
+
+            .welcome-screen h2 {
+                font-size: 1.2rem;
+            }
+
+            .welcome-screen .arrow {
+                right: 10px;
+            }
+
+            .footer {
+                font-size: 0.8rem;
+                padding: 0.5rem;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <select id="theme-toggle" class="theme-toggle tooltip"
+        data-tooltip="Choose a theme: Dark (sleek), Light (bright), Matrix (digital), Sunset (warm), Emoji (fun), Firestorm (bold), Neon (vibrant)"
+        onchange="changeTheme(this.value)">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="matrix">Matrix</option>
+        <option value="sunset">Sunset</option>
+        <option value="emoji">Emoji</option>
+        <option value="firestorm">Firestorm</option>
+        <option value="neon">Neon</option>
+    </select>
+    <div id="welcomeScreen" class="welcome-screen" style="display: none;">
+        <h2>Welcome to Life in Numbers!</h2>
+        <p>Track your life's progress with these features:</p>
+        <ul>
+            <li><strong>Life Dashboard</strong>: See your age, days lived, and life XP.</li>
+            <li><strong>Badges</strong>: Unlock achievements with XP.</li>
+            <li><strong>Daily Tasks</strong>: Earn XP and Coins daily.</li>
+            <li><strong>Pomodoro Timer</strong>: Boost productivity with focused sessions.</li>
+            <li><strong>Theme Selector</strong>: Try changing themes!</li>
+        </ul>
+        <div class="arrow"></div>
+        <button onclick="dismissWelcomeScreen()">OK</button>
+    </div>
+    <div class="container">
+        <div class="card dashboard">
+            <h1 class="tooltip"
+                data-tooltip="Track your life’s progress, earn XP, and unlock badges! Enter your birthdate to start.">⌛
+                Life in Numbers</h1>
+            <p>Enter your birthdate to see your life stats! <strong>Level: <span id="level">1</span></strong></p>
+            <p>XP: <span id="xp">0</span> / <span id="xpNextLevel">100</span></p>
+            <div class="xp-progress-bar">
+                <div class="xp-progress-fill" id="xpBar">0%</div>
+            </div>
+            <input type="date" id="birthdate">
+            <select id="lifeExpectancy">
+                <option value="72.6">Global Average (72.6 years)</option>
+                <option value="81">Japan (81 years)</option>
+                <option value="78">USA (78 years)</option>
+            </select>
+            <button onclick="calculateLifeStats()">Calculate</button>
+        </div>
+        <div class="card results" id="results" style="display:none">
+            <h2>📊 Life Dashboard</h2>
+            <p><strong>Age:</strong> <span class="animated-number" id="age"></span></p>
+            <p><strong>Estimated Date of Death:</strong> <span id="deathDate"></span></p>
+            <p class="tooltip" data-tooltip="Time's ticking 🕰️ — go touch some grass."><strong>Days Lived:</strong>
+                <span class="animated-number" id="daysLived"></span></p>
+            <p class="tooltip" data-tooltip="You blinked while reading this."><strong>Days Left:</strong> <span
+                    class="animated-number" id="daysLeft"></span></p>
+            <p class="tooltip" data-tooltip="Your life's XP bar!"><strong>Life XP:</strong> <span
+                    class="animated-number" id="lifePercent"></span>%</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="lifeBar">0%</div>
+            </div>
+        </div>
+        <div class="card">
+            <h2>🎉 Fun Life Estimates</h2>
+            <p>Time spent sleeping: <span id="sleepHours"></span> hours</p>
+            <p>Time on screen: <span id="screenHours"></span> hours</p>
+            <p>Times laughed: <span id="laughs"></span></p>
+            <p>Times brushed teeth: <span id="brushes"></span></p>
+            <p>Estimated blinks: <span id="blinks"></span></p>
+        </div>
+        <div class="card">
+            <h2>🧠 Smart Insights</h2>
+            <p id="smartInsights"></p>
+        </div>
+        <div class="card">
+            <h2>📅 Life Milestones</h2>
+            <input type="text" id="milestoneInput" placeholder="Add milestone (e.g., Got married)">
+            <input type="date" id="milestoneDate">
+            <button onclick="addMilestone()">Add</button>
+            <ul id="milestones"></ul>
+        </div>
+        <div class="card">
+            <h2>🏆 Badges</h2>
+            <ul id="accomplishments"></ul>
+        </div>
+        <div class="card">
+            <h2>🕹 Daily Tasks</h2>
+            <input type="number" id="sleepTask" placeholder="Hours slept">
+            <input type="number" id="hydrateTask" placeholder="Glasses of water">
+            <input type="number" id="smileTask" placeholder="Times smiled">
+            <button id="completeTasksBtn" onclick="completeTasks()">Complete</button>
+            <p>Life Coins: <span id="lifeCoins">0</span> | XP: <span id="xpDisplay">0</span></p>
+        </div>
+        <div class="card">
+            <h2>🏆 Daily Challenge</h2>
+            <p id="challengeText"></p>
+            <button onclick="completeChallenge()">Complete</button>
+        </div>
+        <div class="card">
+            <h2>🌈 Random Acts of Kindness</h2>
+            <p id="kindnessText"></p>
+            <button onclick="generateKindnessAct()">Generate</button>
+            <button onclick="completeKindnessAct()">Complete</button>
+        </div>
+        <div class="card">
+            <h2>📊 Life Balance</h2>
+            <canvas id="lifeWheel"></canvas>
+        </div>
+        <div class="card">
+            <h2>🌍 You vs. The World</h2>
+            <p id="worldComparison"></p>
+        </div>
+        <div class="card">
+            <h2>💬 Daily Quote</h2>
+            <p class="quote" id="dailyQuote"></p>
+        </div>
+        <div class="card">
+            <h2>🌟 Life Achievements</h2>
+            <input type="text" id="achievementInput" placeholder="Add achievement (e.g., Ran a marathon)">
+            <input type="date" id="achievementDate">
+            <button onclick="addAchievement()">Add</button>
+            <ul id="achievements"></ul>
+        </div>
+        <div class="card">
+            <h2>🛒 Life XP Shop</h2>
+            <ul id="shopItems"></ul>
+        </div>
+        <div class="card">
+            <h2>📋 To-Do List</h2>
+            <input type="text" id="todoInput" placeholder="Add todo (e.g., Meditate)">
+            <button onclick="addTodo()">Add</button>
+            <ul id="todoList"></ul>
+        </div>
+        <div class="card">
+            <h2>📜 To-Do History</h2>
+            <ul id="todoHistory"></ul>
+        </div>
+        <div class="card">
+            <h2>⏱ Focus Timer (Pomodoro)</h2>
+            <p id="timerState">Work Session</p>
+            <div class="timer-display" id="timerDisplay">25:00</div>
+            <button onclick="startFocusTimer()">Start</button>
+            <button onclick="pauseFocusTimer()">Pause</button>
+            <button onclick="resetFocusTimer()">Reset</button>
+            <input type="text" id="focusTaskInput" placeholder="What did you work on?">
+            <button onclick="logFocusTask()">Log Task</button>
+            <p>Completed Sessions: <span id="sessionCount">0</span></p>
+            <ul id="focusHistory"></ul>
+        </div>
+    </div>
+    <footer class="footer">
+        Made with ❤️ by <a href="https://github.com/f58igx-kodes" target="_blank">f58igx-kodes</a>
+    </footer>
+    <script>
+        let milestones = JSON.parse(localStorage.getItem('milestones')) || [];
+        let achievements = JSON.parse(localStorage.getItem('achievements')) || [];
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let todoHistory = JSON.parse(localStorage.getItem('todoHistory')) || [];
+        let focusHistory = JSON.parse(localStorage.getItem('focusHistory')) || [];
+        let lifeCoins = parseInt(localStorage.getItem('lifeCoins')) || 0;
+        let xp = parseInt(localStorage.getItem('xp')) || 0;
+        let level = parseInt(localStorage.getItem('level')) || 1;
+        let challengeCompleted = JSON.parse(localStorage.getItem('challengeCompleted')) || false;
+        let kindnessCompleted = JSON.parse(localStorage.getItem('kindnessCompleted')) || false;
+        let tasksCompletedToday = JSON.parse(localStorage.getItem('tasksCompletedToday')) || false;
+        let shopItems = JSON.parse(localStorage.getItem('shopItems')) || [
+            { id: 'silver-badge', name: 'Silver Badge', icon: '🥈', cost: 100, type: 'badge', prerequisite: null, description: 'Your first milestone in Life in Numbers!', unlocked: false },
+            { id: 'gold-badge', name: 'Gold Badge', icon: '🥇', cost: 250, type: 'badge', prerequisite: 'silver-badge', description: 'A shining achievement of dedication!', unlocked: false },
+            { id: 'platinum-badge', name: 'Platinum Badge', icon: '🏅', cost: 500, type: 'badge', prerequisite: 'gold-badge', description: 'Elite status for consistent progress!', unlocked: false },
+            { id: 'diamond-badge', name: 'Diamond Badge', icon: '💎', cost: 1000, type: 'badge', prerequisite: 'platinum-badge', description: 'A rare gem of perseverance!', unlocked: false },
+            { id: 'obsidian-badge', name: 'Obsidian Badge', icon: '⚫', cost: 2000, type: 'badge', prerequisite: 'diamond-badge', description: 'Unbreakable resolve in life’s challenges!', unlocked: false },
+            { id: 'eternal-badge', name: 'Eternal Badge', icon: '🌟', cost: 5000, type: 'badge', prerequisite: 'obsidian-badge', description: 'Legendary mastery of life’s journey!', unlocked: false }
+        ];
+        let lifeWheelChart = null;
+        let currentKindnessAct = '';
+        let timerInterval = null;
+        let timeLeft = 25 * 60; // 25 minutes in seconds
+        let isWorkSession = true;
+        let isTimerRunning = false;
+        let sessionCount = parseInt(localStorage.getItem('sessionCount')) || 0;
+        const tooltips = [
+            "Time's ticking 🕰️ — go touch some grass.",
+            "You blinked while reading this.",
+            "Your life's XP bar!",
+            "Keep smiling, it’s free XP!"
+        ];
+        const quotes = [
+            "Memento Mori – Remember, you will die... but not today.",
+            "Make today count. Statistically, 0.003% of your life ends today.",
+            "You only live once, but if you do it right, once is enough.",
+            "Don't count the days, make the days count.",
+            "Time is what we want most, but use worst.",
+            "I love pain, pain loves me! – David Goggins",
+            "Don't be average, be savage! – David Goggins",
+            "Stay hard! – David Goggins",
+            "Nobody cares what you did yesterday. What are you doing today? – David Goggins",
+            "Embrace the suck! – David Goggins"
+        ];
+        const kindnessActs = [
+            "Compliment a stranger today! 😊",
+            "Help a neighbor with a small task. 🏡",
+            "Share a kind note with a friend. 📝",
+            "Donate to a local charity. ❤️",
+            "Hold the door open for someone. 🚪",
+            "Volunteer an hour of your time. ⏰"
+        ];
+        const sounds = {
+            xp: new Howl({ src: ['https://freesound.org/data/previews/270/270304_5123851-lq.mp3'] }),
+            hover: new Howl({ src: ['https://freesound.org/data/previews/156/156198_2822628-lq.mp3'] }),
+            bg: new Howl({ src: ['https://freesound.org/data/previews/242/242501_4411861-lq.mp3'], loop: true, volume: 0.2 })
+        };
+        let bgMusicPlaying = false;
+        let gradientAngle = 45;
+
+        function changeTheme(theme) {
+            document.body.className = theme;
+            localStorage.setItem('theme', theme);
+            updateGradientAngle(gradientAngle);
+            updateLifeWheel(
+                parseInt(document.getElementById('sleepTask').value || 8),
+                parseInt(document.getElementById('hydrateTask').value || 0),
+                parseInt(document.getElementById('smileTask').value || 0)
+            );
+            updateShopItems();
+        }
+
+        function updateGradientAngle(angle) {
+            gradientAngle = angle;
+            if (document.body.classList.contains('dark') || document.body.classList.contains('neon') || document.body.classList.contains('firestorm')) {
+                document.body.style.setProperty('--gradient-angle', `${angle}deg`);
+            }
+        }
+
+        function toggleBgMusic() {
+            if (bgMusicPlaying) {
+                sounds.bg.stop();
+                bgMusicPlaying = false;
+            } else {
+                sounds.bg.play();
+                bgMusicPlaying = true;
+            }
+        }
+
+        function triggerConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.background = ['#ff0', '#f0f', '#0ff', '#f00'][Math.floor(Math.random() * 4)];
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2000);
+            }
+        }
+
+        function animateNumber(element, end, duration) {
+            let start = 0;
+            const stepTime = Math.abs(Math.floor(duration / end));
+            const timer = setInterval(() => {
+                start++;
+                element.textContent = start.toLocaleString();
+                if (start >= end) clearInterval(timer);
+            }, stepTime);
+        }
+
+        function showWelcomeScreen() {
+            if (localStorage.getItem('welcomeScreenShown') !== 'true') {
+                document.getElementById('welcomeScreen').style.display = 'block';
+            }
+        }
+
+        function dismissWelcomeScreen() {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            localStorage.setItem('welcomeScreenShown', 'true');
+        }
+
+        function updateLevel() {
+            const levels = [0, 100, 250, 500, 1000, 2000, 5000];
+            let newLevel = 1;
+            let nextLevelXP = 100;
+            for (let i = levels.length - 1; i >= 0; i--) {
+                if (xp >= levels[i]) {
+                    newLevel = i + 1;
+                    nextLevelXP = i + 1 < levels.length ? levels[i + 1] : levels[i];
+                    break;
+                }
+            }
+            const xpForCurrentLevel = levels[newLevel - 1] || 0;
+            const xpProgress = ((xp - xpForCurrentLevel) / (nextLevelXP - xpForCurrentLevel)) * 100;
+            document.getElementById('xpBar').style.width = `${xpProgress}%`;
+            document.getElementById('xpBar').textContent = `${Math.round(xpProgress)}%`;
+            document.getElementById('xpNextLevel').textContent = nextLevelXP;
+            document.getElementById('xpDisplay').textContent = xp;
+            if (newLevel > level) {
+                level = newLevel;
+                localStorage.setItem('level', level);
+                document.getElementById('level').textContent = level;
+                triggerConfetti();
+                sounds.xp.play();
+                alert(`🎉 Leveled up to Level ${level}!`);
+            }
+            document.getElementById('level').textContent = level;
+        }
+
+        function startFocusTimer() {
+            if (!isTimerRunning) {
+                isTimerRunning = true;
+                timerInterval = setInterval(updateFocusTimer, 1000);
+            }
+        }
+
+        function pauseFocusTimer() {
+            if (isTimerRunning) {
+                isTimerRunning = false;
+                clearInterval(timerInterval);
+            }
+        }
+
+        function resetFocusTimer() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            timeLeft = isWorkSession ? 25 * 60 : 5 * 60;
+            document.getElementById('timerState').textContent = isWorkSession ? 'Work Session' : 'Break';
+            document.getElementById('timerDisplay').textContent = formatTime(timeLeft);
+        }
+
+        function updateFocusTimer() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                document.getElementById('timerDisplay').textContent = formatTime(timeLeft);
+            } else {
+                completeFocusSession();
+            }
+        }
+
+        function completeFocusSession() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            if (isWorkSession) {
+                sessionCount++;
+                xp += 10;
+                lifeCoins += 2;
+                localStorage.setItem('sessionCount', sessionCount);
+                localStorage.setItem('xp', xp);
+                localStorage.setItem('lifeCoins', lifeCoins);
+                document.getElementById('sessionCount').textContent = sessionCount;
+                document.getElementById('xp').textContent = xp;
+                document.getElementById('xpDisplay').textContent = xp;
+                document.getElementById('lifeCoins').textContent = lifeCoins;
+                sounds.xp.play();
+                triggerConfetti();
+                updateLevel();
+                updateShopItems();
+                console.log(`Completed focus session: Added 10 XP (Total: ${xp}), 2 Life Coins (Total: ${lifeCoins})`);
+            }
+            isWorkSession = !isWorkSession;
+            timeLeft = isWorkSession ? 25 * 60 : 5 * 60;
+            document.getElementById('timerState').textContent = isWorkSession ? 'Work Session' : 'Break';
+            document.getElementById('timerDisplay').textContent = formatTime(timeLeft);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function logFocusTask() {
+            const taskInput = document.getElementById('focusTaskInput');
+            const task = taskInput.value.trim();
+            if (task) {
+                const today = new Date('2025-08-06T20:07:00+01:00').toDateString();
+                focusHistory.push({ task, date: today, timeSpent: isWorkSession ? '25 min' : '5 min' });
+                focusHistory = focusHistory.slice(-50); // Keep last 50 entries
+                localStorage.setItem('focusHistory', JSON.stringify(focusHistory));
+                updateFocusHistory();
+                taskInput.value = '';
+            }
+        }
+
+        function updateFocusHistory() {
+            const historyList = document.getElementById('focusHistory');
+            historyList.innerHTML = '';
+            focusHistory.forEach(entry => {
+                const li = document.createElement('li');
+                li.className = 'focus-history-item';
+                li.textContent = `✅ ${entry.task} (${entry.timeSpent}, Completed: ${entry.date})`;
+                historyList.appendChild(li);
+            });
+        }
+
+        function updateLifeWheel(sleep = 8, hydrate = 0, smile = 0) {
+            const ctx = document.getElementById('lifeWheel').getContext('2d');
+            if (lifeWheelChart) {
+                lifeWheelChart.destroy();
+            }
+            const isMatrixTheme = document.body.classList.contains('matrix');
+            const isEmojiTheme = document.body.classList.contains('emoji');
+            const isFirestormTheme = document.body.classList.contains('firestorm');
+            try {
+                lifeWheelChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Sleep', 'Hydration', 'Happiness'],
+                        datasets: [{
+                            label: 'Life Balance',
+                            data: [sleep / 24 * 100, hydrate / 8 * 100, smile / 10 * 100],
+                            backgroundColor: isMatrixTheme ? 'rgba(0, 255, 0, 0.2)' : isEmojiTheme ? 'rgba(255, 105, 180, 0.2)' : isFirestormTheme ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 153, 0.2)',
+                            borderColor: isMatrixTheme ? 'rgba(0, 255, 0, 1)' : isEmojiTheme ? 'rgba(255, 105, 180, 1)' : isFirestormTheme ? 'rgba(255, 0, 0, 1)' : 'rgba(0, 255, 153, 1)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    stepSize: 20,
+                                    color: isMatrixTheme ? '#0f0' : isEmojiTheme ? '#333' : isFirestormTheme ? '#fff' : '#fff',
+                                    backdropColor: 'transparent'
+                                },
+                                grid: {
+                                    color: isMatrixTheme ? 'rgba(0, 255, 0, 0.5)' : isEmojiTheme ? 'rgba(255, 105, 180, 0.5)' : isFirestormTheme ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)'
+                                },
+                                angleLines: {
+                                    color: isMatrixTheme ? 'rgba(0, 255, 0, 0.5)' : isEmojiTheme ? 'rgba(255, 105, 180, 0.5)' : isFirestormTheme ? 'rgba(255, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)'
+                                },
+                                pointLabels: {
+                                    color: isMatrixTheme ? '#0f0' : isEmojiTheme ? '#333' : isFirestormTheme ? '#fff' : '#fff'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: isMatrixTheme ? '#0f0' : isEmojiTheme ? '#333' : isFirestormTheme ? '#fff' : '#fff'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Error initializing Chart.js:', e);
+            }
+        }
+
+        function checkDailyChallenge() {
+            const today = new Date('2025-08-06T20:07:00+01:00').toDateString();
+            const lastChallengeDate = localStorage.getItem('challengeDate');
+            if (lastChallengeDate !== today) {
+                challengeCompleted = false;
+                localStorage.setItem('challengeCompleted', false);
+                localStorage.setItem('challengeDate', today);
+            }
+            const challenges = [
+                "Drink 8 glasses of water today! 🚰",
+                "Smile at least 10 times today! 😊",
+                "Get 7 hours of sleep tonight! 😴"
+            ];
+            document.getElementById('challengeText').textContent = challenges[Math.floor(Math.random() * challenges.length)];
+            if (challengeCompleted) {
+                document.getElementById('challengeText').textContent += " (Completed)";
+                document.querySelector('#challengeText + button').disabled = true;
+            }
+        }
+
+        function completeChallenge() {
+            if (!challengeCompleted) {
+                lifeCoins += 20;
+                xp += 100;
+                challengeCompleted = true;
+                localStorage.setItem('lifeCoins', lifeCoins);
+                localStorage.setItem('xp', xp);
+                localStorage.setItem('challengeCompleted', true);
+                document.getElementById('lifeCoins').textContent = lifeCoins;
+                document.getElementById('xp').textContent = xp;
+                document.getElementById('xpDisplay').textContent = xp;
+                document.getElementById('challengeText').textContent += " (Completed)";
+                document.querySelector('#challengeText + button').disabled = true;
+                sounds.xp.play();
+                triggerConfetti();
+                updateLevel();
+                updateShopItems();
+            }
+        }
+
+        function generateKindnessAct() {
+            if (!kindnessCompleted) {
+                let newAct;
+                do {
+                    newAct = kindnessActs[Math.floor(Math.random() * kindnessActs.length)];
+                } while (newAct === currentKindnessAct);
+                currentKindnessAct = newAct;
+                document.getElementById('kindnessText').textContent = newAct;
+            }
+        }
+
+        function checkKindnessAct() {
+            const today = new Date('2025-08-06T20:07:00+01:00').toDateString();
+            const lastKindnessDate = localStorage.getItem('kindnessDate');
+            if (lastKindnessDate !== today) {
+                kindnessCompleted = false;
+                localStorage.setItem('kindnessCompleted', false);
+                localStorage.setItem('kindnessDate', today);
+            }
+            generateKindnessAct();
+            if (kindnessCompleted) {
+                document.getElementById('kindnessText').textContent += " (Completed)";
+                document.querySelector('#kindnessText + button').disabled = true;
+                document.querySelector('#kindnessText + button + button').disabled = true;
+            }
+        }
+
+        function completeKindnessAct() {
+            if (!kindnessCompleted) {
+                lifeCoins += 15;
+                xp += 75;
+                kindnessCompleted = true;
+                localStorage.setItem('lifeCoins', lifeCoins);
+                localStorage.setItem('xp', xp);
+                localStorage.setItem('kindnessCompleted', true);
+                document.getElementById('lifeCoins').textContent = lifeCoins;
+                document.getElementById('xp').textContent = xp;
+                document.getElementById('xpDisplay').textContent = xp;
+                document.getElementById('kindnessText').textContent += " (Completed)";
+                document.querySelector('#kindnessText + button').disabled = true;
+                document.querySelector('#kindnessText + button + button').disabled = true;
+                sounds.xp.play();
+                triggerConfetti();
+                updateLevel();
+                updateShopItems();
+            }
+        }
+
+        function updateShopItems() {
+            const shopList = document.getElementById('shopItems');
+            shopList.innerHTML = '';
+            const badgeList = document.getElementById('accomplishments');
+            badgeList.innerHTML = '';
+            shopItems.forEach(item => {
+                const prereqUnlocked = !item.prerequisite || shopItems.find(i => i.id === item.prerequisite)?.unlocked;
+                const li = document.createElement('li');
+                li.className = 'shop-item tooltip';
+                li.setAttribute('data-tooltip', item.description);
+                li.innerHTML = `${item.icon} ${item.name} (${item.cost} XP${item.prerequisite ? `, Requires ${shopItems.find(i => i.id === item.prerequisite).name}` : ''}) <button onclick="purchaseItem('${item.id}')" ${item.unlocked || xp < item.cost || !prereqUnlocked ? 'disabled' : ''}>${item.unlocked ? 'Unlocked' : 'Unlock'}</button>`;
+                if (!item.unlocked) {
+                    const progress = Math.min(xp / item.cost, 1) * 100;
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'badge-progress-bar';
+                    progressBar.innerHTML = `<div class="badge-progress-fill" style="width: ${progress}%">${Math.round(progress)}%</div>`;
+                    li.appendChild(progressBar);
+                }
+                shopList.appendChild(li);
+                if (item.unlocked) {
+                    const badgeLi = document.createElement('li');
+                    badgeLi.className = 'badge-item tooltip';
+                    badgeLi.setAttribute('data-tooltip', item.description);
+                    badgeLi.innerHTML = `${item.icon} ${item.name}`;
+                    badgeList.appendChild(badgeLi);
+                }
+            });
+        }
+
+        function purchaseItem(itemId) {
+            const item = shopItems.find(i => i.id === itemId);
+            const prereqUnlocked = !item.prerequisite || shopItems.find(i => i.id === item.prerequisite)?.unlocked;
+            if (!item || item.unlocked || xp < item.cost || !prereqUnlocked) {
+                if (xp < item.cost) alert(`Need ${item.cost - xp} more XP to unlock ${item.name}!`);
+                if (!prereqUnlocked) alert(`Unlock ${shopItems.find(i => i.id === item.prerequisite).name} first!`);
+                return;
+            }
+            xp -= item.cost;
+            item.unlocked = true;
+            localStorage.setItem('xp', xp);
+            localStorage.setItem('shopItems', JSON.stringify(shopItems));
+            document.getElementById('xp').textContent = xp;
+            document.getElementById('xpDisplay').textContent = xp;
+            updateShopItems();
+            const shopItem = Array.from(document.getElementById('shopItems').children).find(li => li.textContent.includes(item.name));
+            const badgeItem = Array.from(document.getElementById('accomplishments').children).find(li => li.textContent.includes(item.name));
+            if (shopItem) shopItem.classList.add('pulse');
+            if (badgeItem) badgeItem.classList.add('pulse');
+            setTimeout(() => {
+                if (shopItem) shopItem.classList.remove('pulse');
+                if (badgeItem) badgeItem.classList.remove('pulse');
+            }, 1000);
+            updateLevel();
+            sounds.xp.play();
+            triggerConfetti();
+            alert(`🎉 Unlocked ${item.name}!`);
+        }
+
+        function addTodo() {
+            const todoInput = document.getElementById('todoInput');
+            const todoName = todoInput.value.trim();
+            if (todoName) {
+                todos.push({ name: todoName, lastCompleted: null });
+                localStorage.setItem('todos', JSON.stringify(todos));
+                updateTodoList();
+                todoInput.value = '';
+            }
+        }
+
+        function completeTodo(index) {
+            const today = new Date('2025-08-06T20:07:00+01:00').toDateString();
+            const todo = todos[index];
+            if (todo.lastCompleted !== today) {
+                todo.lastCompleted = today;
+                todoHistory.push({ name: todo.name, completedDate: today });
+                todoHistory = todoHistory.slice(-50); // Keep last 50 entries
+                lifeCoins += 5;
+                xp += 25;
+                localStorage.setItem('lifeCoins', lifeCoins);
+                localStorage.setItem('xp', xp);
+                localStorage.setItem('todos', JSON.stringify(todos));
+                localStorage.setItem('todoHistory', JSON.stringify(todoHistory));
+                document.getElementById('lifeCoins').textContent = lifeCoins;
+                document.getElementById('xp').textContent = xp;
+                document.getElementById('xpDisplay').textContent = xp;
+                sounds.xp.play();
+                triggerConfetti();
+                updateLevel();
+                updateShopItems();
+                updateTodoList();
+                updateTodoHistory();
+                console.log(`Completed todo: ${todo.name}, Added 25 XP (Total: ${xp}), 5 Life Coins (Total: ${lifeCoins})`);
+            }
+        }
+
+        function deleteTodo(index) {
+            if (confirm('Are you sure you want to delete this todo?')) {
+                todos.splice(index, 1);
+                localStorage.setItem('todos', JSON.stringify(todos));
+                updateTodoList();
+            }
+        }
+
+        function updateTodoList() {
+            const todoList = document.getElementById('todoList');
+            todoList.innerHTML = '';
+            const today = new Date('2025-08-06T20:07:00+01:00').toDateString();
+            todos.forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.className = 'todo-item';
+                const status = todo.lastCompleted === today ? '✅' : '⬜';
+                li.innerHTML = `${status} ${todo.name} <button onclick="completeTodo(${index})" ${todo.lastCompleted === today ? 'disabled' : ''}>Complete</button> <button onclick="deleteTodo(${index})">Delete</button>`;
+                todoList.appendChild(li);
+            });
+        }
+
+        function updateTodoHistory() {
+            const historyList = document.getElementById('todoHistory');
+            historyList.innerHTML = '';
+            todoHistory.forEach(entry => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                li.textContent = `✅ ${entry.name} (Completed: ${entry.completedDate})`;
+                historyList.appendChild(li);
+            });
+        }
+
+        function addAchievement() {
+            const achievementInput = document.getElementById('achievementInput');
+            const achievementDate = document.getElementById('achievementDate');
+            const achievement = achievementInput.value.trim();
+            const date = achievementDate.value;
+            if (achievement && date) {
+                const formattedDate = new Date(date).toDateString();
+                achievements.push({ text: achievement, date: formattedDate });
+                localStorage.setItem('achievements', JSON.stringify(achievements));
+                updateAchievements();
+                achievementInput.value = '';
+                achievementDate.value = '';
+                sounds.xp.play();
+                triggerConfetti();
+            }
+        }
+
+        function deleteAchievement(index) {
+            if (confirm('Are you sure you want to delete this achievement?')) {
+                achievements.splice(index, 1);
+                localStorage.setItem('achievements', JSON.stringify(achievements));
+                updateAchievements();
+            }
+        }
+
+        function updateAchievements() {
+            const achievementsList = document.getElementById('achievements');
+            achievementsList.innerHTML = '';
+            // Sort user-added achievements by date (newest first)
+            achievements.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // Add user-added achievements with delete buttons
+            achievements.forEach((a, index) => {
+                const li = document.createElement('li');
+                li.className = 'achievement-item';
+                li.innerHTML = `🎉 ${a.text} (${a.date}) <button onclick="deleteAchievement(${index})">Delete</button>`;
+                achievementsList.appendChild(li);
+            });
+            // Add static achievements without delete buttons
+            const staticAchievements = [];
+            const today = new Date('2025-08-06T20:07:00+01:00');
+            const birthDate = new Date(document.getElementById('birthdate').value || today);
+            const ageInMs = today - birthDate;
+            const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
+            const avgLifeExpectancy = parseFloat(document.getElementById('lifeExpectancy').value || 72.6);
+            const percentLived = Math.min(100, ((ageInDays / (avgLifeExpectancy * 365.25)) * 100).toFixed(1));
+            if (ageInDays >= 10000) staticAchievements.push("🎖 Lived 10,000 days");
+            if (percentLived >= 50) staticAchievements.push("🥳 Passed 50% of average lifespan");
+            if (ageInDays >= 3650) staticAchievements.push("🎉 Slept 30,000+ hours");
+            if (ageInDays * 2 >= 10000) staticAchievements.push("🦷 Brushed 10,000 Teeth");
+            if (ageInDays > 0) staticAchievements.push("🎉 Still Alive!");
+            if (level >= 3) staticAchievements.push("🏆 Reached Level 3");
+            staticAchievements.forEach(a => {
+                const li = document.createElement('li');
+                li.className = 'achievement-item';
+                li.textContent = a;
+                achievementsList.appendChild(li);
+            });
+        }
+
+        function checkDailyTasks() {
+            const today = new Date('2025-08-06T20:07:00+01:00').toDateString();
+            const lastTasksDate = localStorage.getItem('tasksDate');
+            if (lastTasksDate !== today) {
+                tasksCompletedToday = false;
+                localStorage.setItem('tasksCompletedToday', false);
+                localStorage.setItem('tasksDate', today);
+            }
+            if (tasksCompletedToday) {
+                document.getElementById('completeTasksBtn').disabled = true;
+            }
+        }
+
+        function completeTasks() {
+            const today = new Date('2025-08-06T20:07:00+01:00').toDateString();
+            if (tasksCompletedToday) return;
+            const sleep = parseInt(document.getElementById('sleepTask').value || 0);
+            const hydrate = parseInt(document.getElementById('hydrateTask').value || 0);
+            const smile = parseInt(document.getElementById('smileTask').value || 0);
+            if (sleep < 0 || sleep > 24 || hydrate < 0 || smile < 0) {
+                alert('Please enter valid values: Sleep (0-24), Water (0+), Smiles (0+).');
+                return;
+            }
+            const earnedCoins = sleep + hydrate + smile;
+            const earnedXP = earnedCoins * 5;
+            lifeCoins += earnedCoins;
+            xp += earnedXP;
+            tasksCompletedToday = true;
+            localStorage.setItem('lifeCoins', lifeCoins);
+            localStorage.setItem('xp', xp);
+            localStorage.setItem('tasksCompletedToday', true);
+            localStorage.setItem('tasksDate', today);
+            document.getElementById('lifeCoins').textContent = lifeCoins;
+            document.getElementById('xp').textContent = xp;
+            document.getElementById('xpDisplay').textContent = xp;
+            document.getElementById('completeTasksBtn').disabled = true;
+            sounds.xp.play();
+            triggerConfetti();
+            updateLevel();
+            updateLifeWheel(sleep, hydrate, smile);
+            updateShopItems();
+            console.log(`Completed daily tasks: Added ${earnedXP} XP (Total: ${xp}), ${earnedCoins} Life Coins (Total: ${lifeCoins})`);
+        }
+
+        function calculateLifeStats() {
+            const input = document.getElementById('birthdate').value;
+            if (!input) return;
+
+            const birthDate = new Date(input);
+            const today = new Date('2025-08-06T20:07:00+01:00');
+            const minDate = new Date('1900-01-01');
+            if (birthDate > today || birthDate < minDate) {
+                alert('Please enter a valid birthdate between 1900 and today.');
+                return;
+            }
+
+            const ageInMs = today - birthDate;
+            const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
+            const ageInYears = ageInDays / 365.25;
+            const avgLifeExpectancy = parseFloat(document.getElementById('lifeExpectancy').value);
+            const deathDate = new Date(birthDate);
+            deathDate.setFullYear(deathDate.getFullYear() + avgLifeExpectancy);
+            const deathInMs = deathDate - today;
+            const daysLeft = Math.max(0, Math.floor(deathInMs / (1000 * 60 * 60 * 24)));
+            const percentLived = Math.min(100, ((ageInDays / (avgLifeExpectancy * 365.25)) * 100).toFixed(1));
+
+            document.getElementById('age').textContent = ageInYears.toFixed(1);
+            document.getElementById('deathDate').textContent = deathDate.toDateString();
+            animateNumber(document.getElementById('daysLived'), ageInDays, 2000);
+            animateNumber(document.getElementById('daysLeft'), daysLeft, 2000);
+            animateNumber(document.getElementById('lifePercent'), parseFloat(percentLived), 1000);
+            document.getElementById('lifeBar').style.width = percentLived + '%';
+            document.getElementById('lifeBar').textContent = percentLived + '%';
+
+            document.getElementById('sleepHours').textContent = (ageInDays * 8).toLocaleString();
+            document.getElementById('screenHours').textContent = (ageInDays * 3).toLocaleString();
+            document.getElementById('laughs').textContent = (ageInDays * 10).toLocaleString();
+            document.getElementById('brushes').textContent = (ageInDays * 2).toLocaleString();
+            document.getElementById('blinks').textContent = (ageInDays * 20000).toLocaleString();
+
+            document.getElementById('smartInsights').textContent = `You've spent about ${(ageInDays * 8 / 24 / 365.25).toFixed(1)} years asleep. Sleep 1 hour less daily to gain ${(daysLeft / 24).toFixed(1)} extra days!`;
+
+            document.getElementById('dailyQuote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+
+            updateAchievements();
+
+            const sleep = parseInt(document.getElementById('sleepTask').value || 8);
+            document.getElementById('worldComparison').textContent = `In Japan, people your age sleep ~7.5h/day. You're at ${((sleep / 7.5) * 100).toFixed(0)}% of their sleep!`;
+
+            document.getElementById('results').style.display = 'block';
+            document.querySelectorAll('.tooltip').forEach(el => {
+                if (!el.classList.contains('theme-toggle') && !el.closest('h1') && !el.classList.contains('shop-item') && !el.classList.contains('badge-item')) {
+                    el.setAttribute('data-tooltip', tooltips[Math.floor(Math.random() * tooltips.length)]);
+                }
+            });
+
+            updateLifeWheel(sleep, parseInt(document.getElementById('hydrateTask').value || 0), parseInt(document.getElementById('smileTask').value || 0));
+            updateShopItems();
+        }
+
+        function addMilestone() {
+            const milestoneInput = document.getElementById('milestoneInput');
+            const milestoneDate = document.getElementById('milestoneDate');
+            const milestone = milestoneInput.value.trim();
+            const date = milestoneDate.value;
+            if (milestone && date) {
+                const formattedDate = new Date(date).toDateString();
+                milestones.push({ text: milestone, date: formattedDate });
+                localStorage.setItem('milestones', JSON.stringify(milestones));
+                const li = document.createElement('li');
+                li.className = 'milestone-item';
+                li.textContent = `🎉 ${milestone} (${formattedDate})`;
+                document.getElementById('milestones').appendChild(li);
+                milestoneInput.value = '';
+                milestoneDate.value = '';
+                sounds.xp.play();
+                triggerConfetti();
+            }
+        }
+
+        window.onload = () => {
+            try {
+                milestones.forEach(m => {
+                    const li = document.createElement('li');
+                    li.className = 'milestone-item';
+                    li.textContent = `🎉 ${m.text} (${m.date})`;
+                    document.getElementById('milestones').appendChild(li);
+                });
+                updateTodoList();
+                updateTodoHistory();
+                updateAchievements();
+                updateFocusHistory();
+                document.getElementById('lifeCoins').textContent = lifeCoins;
+                document.getElementById('xp').textContent = xp;
+                document.getElementById('xpDisplay').textContent = xp;
+                document.getElementById('level').textContent = level;
+                document.getElementById('sessionCount').textContent = sessionCount;
+                document.getElementById('dailyQuote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+                const savedTheme = localStorage.getItem('theme') || 'firestorm';
+                document.getElementById('theme-toggle').value = savedTheme;
+                changeTheme(savedTheme);
+                document.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('mouseover', () => sounds.hover.play());
+                });
+                document.body.addEventListener('click', toggleBgMusic);
+                document.body.addEventListener('mousemove', e => {
+                    const angle = (e.clientX / window.innerWidth) * 90 + 45;
+                    updateGradientAngle(angle);
+                });
+                checkDailyChallenge();
+                checkKindnessAct();
+                checkDailyTasks();
+                updateLifeWheel();
+                updateShopItems();
+                updateLevel();
+                showWelcomeScreen();
+            } catch (e) {
+                console.error('Error in window.onload:', e);
+            }
+        };
+    </script>
+</body>
+
+</html>
