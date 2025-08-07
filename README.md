@@ -3,8 +3,7 @@
 **Your life, visualized.**  
 Track every moment you've lived, earn XP, unlock badges, and gamify your existence.
 
-![Life in Numbers Banner](banner.png) <!-- Replace with actual banner if available -->
-
+![Life in Numbers Screenshot](screenshots/screenshot.png)
 
 
 ## Features
